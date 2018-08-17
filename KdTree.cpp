@@ -145,7 +145,7 @@ int KdTree::constructKdTree(int currentDim, int numPoints, vector<vector<int> >&
 	dist = diff;
     }
     return dist;
-  case NormType::EUCLIDIAN: //TODO EUCLIDEANだとKd木の探索領域をもう少し減らせる
+  case NormType::EUCLIDIAN: //EUCLIDEANでは距離を2乗のまま扱う
     for(int d=0; d<x1.size(); d++){
       diff = x1[d]-x2[d];
       dist += diff * diff;
@@ -251,16 +251,26 @@ void KdTree::countPointsWithinRCalc(int sampleIndex, double R, KdTreeNode& node,
   
   vector<double> x1 = dataForNormCalc[sampleIndex];
   vector<double> x2 = dataForNormCalc[node.index];
-  double Dist;
-  for(int d=0; d<totalDimensions; d++){
-    Dist = x1[d]-x2[d];
-    if(Dist < 0)
-      Dist = -Dist;
-    if(Dist >= R)
-      break;
-    else if(d==totalDimensions-1)
-      count++;
-  }//EUCLIDEANの場合を後で作る
+  double Dist = 0;
+  if(normType == NormType::MAX){
+    for(int d=0; d<totalDimensions; d++){
+      Dist = x1[d]-x2[d];
+      if(Dist < 0)
+	Dist = -Dist;
+      if(Dist >= R)
+	break;
+      else if(d==totalDimensions-1)
+	count++;
+    }
+  }else{
+    for(int d=0; d<totalDimensions; d++){
+      Dist += (x1[d]-x2[d]) * (x1[d]-x2[d]);
+      if(Dist >= R)
+	break;
+      else if(d==totalDimensions-1)
+	count++;
+    }
+  }
 
   int nextLevel = (level+1) % totalDimensions;
   double dist = x1[level]-x2[level];

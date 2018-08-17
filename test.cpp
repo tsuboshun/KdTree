@@ -3,13 +3,14 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <ctime>
 #include <boost/math/special_functions/digamma.hpp>
 #include "KdTree.h"
 
 using namespace std;
 
 int main(){
-  double sample_N = 100000;
+  double sample_N = 10000;
   random_device rnd;
   mt19937 mt(rnd());
   normal_distribution<> norm(0, 0.02);
@@ -33,6 +34,9 @@ int main(){
   }
   ofs.close();
 
+  clock_t start, end;
+  start = clock();
+  
   int K = 20;
   KdTree kdTree = KdTree(vector<vector<double> >{test});
   double ret = 0;
@@ -59,6 +63,9 @@ int main(){
   ret2 = ret2 + boost::math::digamma(K) + boost::math::digamma(sample_N);
   cout << ret << " expected value: " << -2.493084472 << endl; //理論値 1/2 + log(sqrt(2*pi)*0.02) = -2.493084472
   cout << ret2 << " expected value: " << 0.111571775 << endl; //理論値 -1/2*log(4/5) = 0.111571775
+
+  end = clock();
+  cout << (double)(end-start)/CLOCKS_PER_SEC << "sec\n";
   
   return 0;
 }
