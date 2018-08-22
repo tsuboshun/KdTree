@@ -149,7 +149,7 @@ inline void KdTree::findKNearestNeighboursCalc(int& sampleIndex, vector<pair<dou
     return;
   
   double Dist = norm(sampleIndex, node.index);
-  if(Dist!=0){ //自分自身の場合はpass
+  if(node.index!=sampleIndex){ //自分自身の場合はpass
     if(currentKBestIndex < K){
       currentKBestVec[currentKBestIndex].first = Dist;
       currentKBestVec[currentKBestIndex].second = node.index;
