@@ -5,34 +5,18 @@
 #include "KdTree.h"
 using namespace std;
 
-bool compare_pair(pair<double, int> b1, pair<double, int> b2){
-  if(b1.first > b2.first)
-    return true;
-  else if(b1.first < b2.first)
-    return false;
-  else
-    if(b1.second > b2.second)
-      return true;
-    else
-      return false;
-}
-
-KdTreeNode::KdTreeNode(int i, KdTreeNode* lt, KdTreeNode* rt)
-{
-    index = i;
-    leftTree = lt;
-    rightTree = rt;
+inline bool compare_pair(pair<double, int>& b1, pair<double, int>& b2){
+  return b1.first > b2.first || ( b1.first == b2.first && b1.second > b2.second);
 }
 
 KdTree::KdTree(vector<vector<double> > d)
 {
-  normType = NormType::MAX;
   data = d;
   totalDimensions = data.size();
   numObservations = data[0].size();
   dataForNormCalc = vector<vector<double> >(numObservations, vector<double>(totalDimensions, 0));
-  for(int i=0; i<numObservations; i++){
-    for(int j=0; j<totalDimensions; j++){
+  for(int j=0; j<totalDimensions; ++j){
+    for(int i=0; i<numObservations; ++i){
       dataForNormCalc[i][j] = data[j][i];
     }
   }
@@ -40,25 +24,31 @@ KdTree::KdTree(vector<vector<double> > d)
     = vector<vector<int> >(totalDimensions, vector<int>(numObservations, 0));
   vector<pair<double, int> > distTable = 
     vector<pair<double, int> >(numObservations, make_pair(0., 0));
-  for(int i=0; i<totalDimensions; i++){
-    for(int j=0; j<numObservations; j++){
+  for(int i=0; i<totalDimensions; ++i){
+    for(int j=0; j<numObservations; ++j){
       distTable[j].second = j;
       distTable[j].first = data[i][j];
     }
     sort(distTable.begin(), distTable.end());
-    for(int j=0; j<numObservations; j++){
+    for(int j=0; j<numObservations; ++j){
       masterSortedArrayIndices[i][j] = distTable[j].second;
     }
   }
-  tree.resize(numObservations);
-  for(int j=0; j<numObservations; j++)
+  tree = (struct KdTreeNode*) malloc(sizeof(KdTreeNode)*numObservations);
+  for(int j=0; j<numObservations; ++j)
     tree[j].index = j;
-  endOfTree = KdTreeNode(-1, NULL, NULL);
+  endOfTree = {-1, NULL, NULL};
   rootNodeIndex = constructKdTree(0, numObservations, masterSortedArrayIndices);
 }
 
+KdTree::~KdTree()
+{
+  vector<vector<double> >().swap(data);
+  vector<vector<double> >().swap(dataForNormCalc);
+  free(tree);
+}
 
-int KdTree::constructKdTree(int currentDim, int numPoints, vector<vector<int> >& sortedArrayIndices)
+inline int KdTree::constructKdTree(int currentDim, int& numPoints, vector<vector<int> >& sortedArrayIndices)
 {
   int temp;
   if(numPoints == 1){
@@ -82,7 +72,7 @@ int KdTree::constructKdTree(int currentDim, int numPoints, vector<vector<int> >&
   while((candidateSplitPoint > 0) &&
 	(data[currentDim][sortedArrayIndices[currentDim][candidateSplitPoint-1]] ==
 	 data[currentDim][sortedArrayIndices[currentDim][candidateSplitPoint]])){
-    candidateSplitPoint--;
+    --candidateSplitPoint;
   }
   double medianValueInCurrentDim = data[currentDim][sortedArrayIndices[currentDim][candidateSplitPoint]];
   int sampleNumberForSplitPoint = sortedArrayIndices[currentDim][candidateSplitPoint];
@@ -99,15 +89,15 @@ int KdTree::constructKdTree(int currentDim, int numPoints, vector<vector<int> >&
   int sampleNumberInData;
   for(int dim=0; dim<totalDimensions; dim++){
     if(dim == currentDim){
-      for(int i=0; i<leftNumPoints; i++)
+      for(int i=0; i<leftNumPoints; ++i)
 	newSortedArrayIndicesLeft[dim][i] = sortedArrayIndices[dim][i];
-      for(int i=0; i<rightNumPoints; i++)
+      for(int i=0; i<rightNumPoints; ++i)
 	newSortedArrayIndicesRight[dim][i] = sortedArrayIndices[dim][candidateSplitPoint+1+i];
       continue;
     }
     leftIndex = 0;
     rightIndex = 0;
-    for(int i=0; i<numPoints; i++){
+    for(int i=0; i<numPoints; ++i){
       sampleNumberInData = sortedArrayIndices[dim][i];
       if (sampleNumberInData == sampleNumberForSplitPoint){
 	continue;
@@ -129,29 +119,16 @@ int KdTree::constructKdTree(int currentDim, int numPoints, vector<vector<int> >&
   return sampleNumberForSplitPoint;
 }
 
- double KdTree::norm(int i1, int i2)
+inline double KdTree::norm(int& i1, int& i2)
 {
-  vector<double> x1 = dataForNormCalc[i1];
-  vector<double> x2 = dataForNormCalc[i2];
   double dist = 0.;
   double diff = 0.;
-  switch(normType){
-  case NormType::MAX:
-    for(int d=0; d<totalDimensions; d++){
-      diff = x1[d] - x2[d];
-      if(diff<0)
-	diff = -diff;
-      if(diff > dist)
-	dist = diff;
-    }
-    return dist;
-  case NormType::EUCLIDIAN: //EUCLIDEANでは距離を2乗のまま扱う
-    for(int d=0; d<x1.size(); d++){
-      diff = x1[d]-x2[d];
-      dist += diff * diff;
-    }
-    return dist;
+  for(int d=0; d<totalDimensions; d++){
+    diff = abs(dataForNormCalc[i1][d] - dataForNormCalc[i2][d]);
+    if(diff > dist)
+      dist = diff;
   }
+  return dist;
 }
 
 //並列化できるように書くこと
@@ -166,7 +143,7 @@ double KdTree::findKNearestNeighbour(int k, int sampleIndex)
 }
 
 //currentKBestは降順にソートする
-void KdTree::findKNearestNeighboursCalc(int sampleIndex, vector<pair<double, int> >& currentKBestVec, double& currentKBestDist, int& currentKBestIndex, KdTreeNode& node, int level)
+inline void KdTree::findKNearestNeighboursCalc(int& sampleIndex, vector<pair<double, int> >& currentKBestVec, double& currentKBestDist, int& currentKBestIndex, KdTreeNode& node, int level)
 {
   if(node.index == -1)
     return;
@@ -188,55 +165,37 @@ void KdTree::findKNearestNeighboursCalc(int sampleIndex, vector<pair<double, int
       currentKBestDist = currentKBestVec[0].first;
     }
   }
-
   
   int nextLevel = (level + 1)%totalDimensions;
   double dist = data[level][sampleIndex]-data[level][node.index];
   if(dist<=0){
     findKNearestNeighboursCalc(sampleIndex, currentKBestVec, currentKBestDist, currentKBestIndex, *node.leftTree, nextLevel);
+    if(currentKBestIndex < K || currentKBestDist > -dist)
+      findKNearestNeighboursCalc(sampleIndex, currentKBestVec, currentKBestDist, currentKBestIndex, *node.rightTree, nextLevel);
   }else{
     findKNearestNeighboursCalc(sampleIndex, currentKBestVec, currentKBestDist, currentKBestIndex, *node.rightTree, nextLevel);
-  }
-
-  if(normType == NormType::EUCLIDIAN){
-    if(currentKBestIndex < K || dist*dist < currentKBestDist){
-      if(dist <= 0)
-	findKNearestNeighboursCalc(sampleIndex, currentKBestVec, currentKBestDist, currentKBestIndex, *node.rightTree, nextLevel);
-      else
-	findKNearestNeighboursCalc(sampleIndex, currentKBestVec, currentKBestDist, currentKBestIndex, *node.leftTree, nextLevel);
-    }
-  }else{
-    if(dist <= 0 && (currentKBestIndex < K || currentKBestDist > -dist))
-      findKNearestNeighboursCalc(sampleIndex, currentKBestVec, currentKBestDist, currentKBestIndex, *node.rightTree, nextLevel);
-    else if(dist > 0 && (currentKBestIndex < K || dist < currentKBestDist))
+    if(currentKBestIndex < K || dist < currentKBestDist)
       findKNearestNeighboursCalc(sampleIndex, currentKBestVec, currentKBestDist, currentKBestIndex, *node.leftTree, nextLevel);
   }
   return;
 }
 
-void KdTree::fastSort(vector<pair<double, int> >& vec)
+
+inline void KdTree::fastSort(vector<pair<double, int> >& vec)
 { 
   pair<double, int> vec0 = vec[0];
-  if(vec0.first > vec[1].first)
-    return;
-  if(vec0.first < vec.back().first){
-    for(int i=0; i<vec.size()-1; i++)
-      vec[i] = vec[i+1];
-    vec.back() = vec0;
-    return;
-  }
-
-  for(int i=2; i<vec.size(); i++){
-    if(vec0.first >= vec[i].first){
-      for(int j=0; j<i-1; j++)
-	vec[j] = vec[j+1];
-      vec[i-1]=vec0;
+  for(int i=0; i<vec.size()-1; ++i){
+    if(vec0.first >= vec[i+1].first){
+      vec[i] = vec0;
       return;
     }
+    vec[i] = vec[i+1];
   }
+  vec.back() = vec0;
+  return;
 }
 
-
+  
 int KdTree::countPointsWithinR(int sampleIndex, double R) //自分自信を除いてR以内に何点あるか
 {
   int count = 0;
@@ -244,54 +203,30 @@ int KdTree::countPointsWithinR(int sampleIndex, double R) //自分自信を除�
   return count-1; //最後に自分自身を引く
 }
 
-void KdTree::countPointsWithinRCalc(int sampleIndex, double R, KdTreeNode& node, int& count, int level)
+
+inline void KdTree::countPointsWithinRCalc(int& sampleIndex, double& R, KdTreeNode& node, int& count, int level)
 {
   if(node.index==-1)
     return;
   
-  vector<double> x1 = dataForNormCalc[sampleIndex];
-  vector<double> x2 = dataForNormCalc[node.index];
-  double Dist = 0;
-  if(normType == NormType::MAX){
-    for(int d=0; d<totalDimensions; d++){
-      Dist = x1[d]-x2[d];
-      if(Dist < 0)
-	Dist = -Dist;
-      if(Dist >= R)
-	break;
-      else if(d==totalDimensions-1)
-	count++;
-    }
-  }else{
-    for(int d=0; d<totalDimensions; d++){
-      Dist += (x1[d]-x2[d]) * (x1[d]-x2[d]);
-      if(Dist >= R)
-	break;
-      else if(d==totalDimensions-1)
-	count++;
-    }
+  for(int d=0; d<totalDimensions; d++){
+    if(abs(dataForNormCalc[sampleIndex][d]-dataForNormCalc[node.index][d]) >= R)
+      break;
+    if(d==totalDimensions-1)
+      count++;
   }
-
+  
+  double dist = dataForNormCalc[sampleIndex][level]-dataForNormCalc[node.index][level];
   int nextLevel = (level+1) % totalDimensions;
-  double dist = x1[level]-x2[level];
   
-  if(dist<=0)
+  if(dist<=0){
     countPointsWithinRCalc(sampleIndex, R, *node.leftTree, count, nextLevel);
-  else
-    countPointsWithinRCalc(sampleIndex, R, *node.rightTree, count, nextLevel);
-  
-  if(normType == NormType::EUCLIDIAN){
-    if(dist*dist < R){
-      if(dist <= 0)
-	countPointsWithinRCalc(sampleIndex, R, *node.rightTree, count, nextLevel);
-      else
-	countPointsWithinRCalc(sampleIndex, R, *node.leftTree, count, nextLevel);
-    }
-  }else{
-    if(dist <= 0 && -dist < R)
+    if(-dist < R)
       countPointsWithinRCalc(sampleIndex, R, *node.rightTree, count, nextLevel);
-    else if(dist > 0 && dist < R)
+  }else{
+    countPointsWithinRCalc(sampleIndex, R, *node.rightTree, count, nextLevel);
+    if(dist < R)
       countPointsWithinRCalc(sampleIndex, R, *node.leftTree, count, nextLevel);
-  }
+  }  
   return;
 }

@@ -18,19 +18,25 @@ int main(){
   vector<double> test(sample_N);
   vector<double> test2x(sample_N);
   vector<double> test2y(sample_N);
+  vector<double> test3x(sample_N);
+  vector<double> test3y(sample_N);
+  vector<double> test3z(sample_N);
   double temp;
   for(int j=0; j<sample_N; j++){
     test[j] = norm(mt);
     temp = norm2(mt);
     test2x[j] = 2*temp;
     test2y[j] = temp + 2*norm2(mt);
+    test3x[j] = norm2(mt);
+    test3y[j] = norm2(mt);
+    test3z[j] = norm2(mt);
   }
 
   string filename = "test.txt";
   ofstream ofs(filename);
 
   for(int j=0; j<sample_N; j++){
-    ofs << test2x[j] << ' ' << test2y[j] << '\n';
+    ofs << setprecision(15) << test2x[j] << ' ' << test2y[j] << ' ' << test[j] << '\n';
   }
   ofs.close();
 
@@ -41,19 +47,34 @@ int main(){
   KdTree kdTree = KdTree(vector<vector<double> >{test});
   double ret = 0;
   double eps = 0;
-  
+
   KdTree kdTree2 = KdTree(vector<vector<double> >{test2x, test2y});
   KdTree kdTree2x = KdTree(vector<vector<double> >{test2x});
   KdTree kdTree2y = KdTree(vector<vector<double> >{test2y});
+  KdTree kdTree3 = KdTree(vector<vector<double> >{test3x, test3y, test3z});
   double ret2 = 0;
   double eps2 = 0;
   int Nx = 0;
   int Ny = 0;
+
   
+  end = clock();
+  cout << "construct " << (double)(end-start)/CLOCKS_PER_SEC << "sec\n";
+  start = clock();
+  
+  eps2 = kdTree3.findKNearestNeighbour(20, 0);
+  end = clock();
+  cout << "find20NN " << (double)(end-start)/CLOCKS_PER_SEC << "sec\n";
+  start = clock();
+  
+  Nx = kdTree3.countPointsWithinR(0, 1.0);
+  end = clock();
+  cout << "countPoints " << (double)(end-start)/CLOCKS_PER_SEC << "sec" << " Nx " << Nx << "\n";
+  start = clock();
+    
   for(int j=0; j<sample_N; j++){
     eps = kdTree.findKNearestNeighbour(K, j);
     ret += log(2*eps)/sample_N;
-
     eps2 = kdTree2.findKNearestNeighbour(K, j);
     Nx = kdTree2x.countPointsWithinR(j, eps2);
     Ny = kdTree2y.countPointsWithinR(j, eps2);
