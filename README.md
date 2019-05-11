@@ -8,5 +8,5 @@ I wrote this library referring to the code of JIDT, and checked the consistency 
 My code is faster than JIDT in terms of the calculation of Shannon entropy, but around three times slower in terms of the KSG method right now. I welcome any pull requests.
 
 ## 2. How to run
-You need to install the Boost C++ library beforehand. Ituaf you are in the directory of KdTree.cpp, you can compile test.cpp as follows.  
+You need to install the Boost C++ library beforehand. If you are in the directory of KdTree.cpp, you can compile test.cpp as follows.  
 ```g++ test.cpp KdTree.cpp -I/path_to_boost_library ```
