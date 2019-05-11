@@ -5,6 +5,7 @@
 #include "KdTree.h"
 using namespace std;
 
+
 inline bool compare_pair(pair<double, int>& b1, pair<double, int>& b2){
   return b1.first > b2.first || ( b1.first == b2.first && b1.second > b2.second);
 }
@@ -41,12 +42,14 @@ KdTree::KdTree(vector<vector<double> > d)
   rootNodeIndex = constructKdTree(0, numObservations, masterSortedArrayIndices);
 }
 
+
 KdTree::~KdTree()
 {
   vector<vector<double> >().swap(data);
   vector<vector<double> >().swap(dataForNormCalc);
   free(tree);
 }
+
 
 inline int KdTree::constructKdTree(int currentDim, int& numPoints, vector<vector<int> >& sortedArrayIndices)
 {
@@ -119,6 +122,7 @@ inline int KdTree::constructKdTree(int currentDim, int& numPoints, vector<vector
   return sampleNumberForSplitPoint;
 }
 
+
 inline double KdTree::norm(int& i1, int& i2)
 {
   double dist = 0.;
@@ -131,7 +135,7 @@ inline double KdTree::norm(int& i1, int& i2)
   return dist;
 }
 
-//並列化できるように書くこと
+
 double KdTree::findKNearestNeighbour(int k, int sampleIndex)
 {
   K = k;
@@ -142,14 +146,15 @@ double KdTree::findKNearestNeighbour(int k, int sampleIndex)
   return currentKBestVec[0].first;
 }
 
-//currentKBestは降順にソートする
+
+//currentKBest is to be sorted in a descending order
 inline void KdTree::findKNearestNeighboursCalc(int& sampleIndex, vector<pair<double, int> >& currentKBestVec, double& currentKBestDist, int& currentKBestIndex, KdTreeNode& node, int level)
 {
   if(node.index == -1)
     return;
   
   double Dist = norm(sampleIndex, node.index);
-  if(node.index!=sampleIndex){ //自分自身の場合はpass
+  if(node.index!=sampleIndex){ //pass if it is the target data itself
     if(currentKBestIndex < K){
       currentKBestVec[currentKBestIndex].first = Dist;
       currentKBestVec[currentKBestIndex].second = node.index;
@@ -196,11 +201,11 @@ inline void KdTree::fastSort(vector<pair<double, int> >& vec)
 }
 
   
-int KdTree::countPointsWithinR(int sampleIndex, double R) //自分自信を除いてR以内に何点あるか
+int KdTree::countPointsWithinR(int sampleIndex, double R) //how many points there are within r < R from the target data (sampleIndex) excluding itself
 {
   int count = 0;
   countPointsWithinRCalc(sampleIndex, R, tree[rootNodeIndex], count, 0);
-  return count-1; //最後に自分自身を引く
+  return count-1; //excluding the target data
 }
 
 

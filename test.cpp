@@ -31,10 +31,8 @@ int main(){
     test3y[j] = norm2(mt);
     test3z[j] = norm2(mt);
   }
-
   string filename = "test.txt";
   ofstream ofs(filename);
-
   for(int j=0; j<sample_N; j++){
     ofs << setprecision(15) << test2x[j] << ' ' << test2y[j] << ' ' << test[j] << '\n';
   }
@@ -42,36 +40,35 @@ int main(){
 
   clock_t start, end;
   start = clock();
-  
   int K = 20;
   KdTree kdTree = KdTree(vector<vector<double> >{test});
-  double ret = 0;
-  double eps = 0;
-
   KdTree kdTree2 = KdTree(vector<vector<double> >{test2x, test2y});
   KdTree kdTree2x = KdTree(vector<vector<double> >{test2x});
   KdTree kdTree2y = KdTree(vector<vector<double> >{test2y});
   KdTree kdTree3 = KdTree(vector<vector<double> >{test3x, test3y, test3z});
+  double ret = 0;
   double ret2 = 0;
+  double eps = 0;
   double eps2 = 0;
   int Nx = 0;
   int Ny = 0;
 
-  
+  //Basic usage of our library
   end = clock();
   cout << "construct " << (double)(end-start)/CLOCKS_PER_SEC << "sec\n";
   start = clock();
   
-  eps2 = kdTree3.findKNearestNeighbour(20, 0);
+  eps = kdTree3.findKNearestNeighbour(20, 0); //calculate the distance to the 20th nearest neighbour from the first(0) data point
   end = clock();
   cout << "find20NN " << (double)(end-start)/CLOCKS_PER_SEC << "sec\n";
   start = clock();
   
-  Nx = kdTree3.countPointsWithinR(0, 1.0);
+  Nx = kdTree3.countPointsWithinR(0, 1.0); //calculate the number of data points which exist within r<1.0 from the first(0) data point
   end = clock();
   cout << "countPoints " << (double)(end-start)/CLOCKS_PER_SEC << "sec" << " Nx " << Nx << "\n";
   start = clock();
-    
+
+  //KL method and KSG method
   for(int j=0; j<sample_N; j++){
     eps = kdTree.findKNearestNeighbour(K, j);
     ret += log(2*eps)/sample_N;
@@ -82,8 +79,8 @@ int main(){
   }
   ret = ret - boost::math::digamma(K) + boost::math::digamma(sample_N);
   ret2 = ret2 + boost::math::digamma(K) + boost::math::digamma(sample_N);
-  cout << ret << " expected value: " << -2.493084472 << endl; //理論値 1/2 + log(sqrt(2*pi)*0.02) = -2.493084472
-  cout << ret2 << " expected value: " << 0.111571775 << endl; //理論値 -1/2*log(4/5) = 0.111571775
+  cout << ret << " expected value: " << -2.493084472 << endl; //Shannon entropy of "test"  analytically 1/2 + log(sqrt(2*pi)*0.02) = -2.493084472
+  cout << ret2 << " expected value: " << 0.111571775 << endl; //Mutual information between "test2x" and "test2y" analytically -1/2*log(4/5) = 0.111571775
 
   end = clock();
   cout << (double)(end-start)/CLOCKS_PER_SEC << "sec\n";
