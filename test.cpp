@@ -79,8 +79,8 @@ int main(){
   }
   ret = ret - boost::math::digamma(K) + boost::math::digamma(sample_N);
   ret2 = ret2 + boost::math::digamma(K) + boost::math::digamma(sample_N);
-  cout << ret << " expected value: " << -2.493084472 << endl; //Shannon entropy of "test"  analytically 1/2 + log(sqrt(2*pi)*0.02) = -2.493084472
-  cout << ret2 << " expected value: " << 0.111571775 << endl; //Mutual information between "test2x" and "test2y" analytically -1/2*log(4/5) = 0.111571775
+  cout << ret << " expected value: " << -2.493084472 << endl; //Shannon entropy of "test". Analytical solution is 1/2 + log(sqrt(2*pi)*0.02) = -2.493084472
+  cout << ret2 << " expected value: " << 0.111571775 << endl; //Mutual information between "test2x" and "test2y". -1/2*log(4/5) = 0.111571775
 
   end = clock();
   cout << (double)(end-start)/CLOCKS_PER_SEC << "sec\n";
