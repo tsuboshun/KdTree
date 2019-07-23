@@ -9,5 +9,5 @@ It can compute Shannon entropy faster than JIDT, but it is around three times sl
 I welcome any pullrequests.
 
 ## 2. How to run
-You need to install the [Boost C++ library](https://www.boost.org) beforehand. If you are in the directory of KdTree.cpp, you can compile test.cpp as follows.
+You need to install the [Boost C++ library](https://www.boost.org) beforehand. If you are in the directory of KdTree.cpp, you can compile test.cpp as follows.  
 ```g++ test.cpp KdTree.cpp -I/path_to_boost_library -std=c++11```
