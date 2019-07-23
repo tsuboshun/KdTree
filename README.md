@@ -5,8 +5,7 @@ You can implement [KL method](http://www.mathnet.ru/php/archive.phtml?wshow=pape
 Please refer to test.cpp for the usage.
 As similar libraries, there are [nanoflann](https://github.com/jlblancoc/nanoflann) which is a C++ header-only library but may require you to write an adapter class or [JIDT](https://github.com/jlizier/jidt) which is a Java library.
 I wrote this library referring to the code of JIDT, and checked the consistency of the calculation results.
-It can compute Shannon entropy faster than JIDT, but it is around three times slower than JIDT in terms of the KSG method.
-I welcome any pullrequests.
+It can compute Shannon entropy faster than JIDT, but it is around three times slower than JIDT in terms of the KSG method. I welcome any pull requests.
 
 ## 2. How to run
 You need to install the [Boost C++ library](https://www.boost.org) beforehand. If you are in the directory of KdTree.cpp, you can compile test.cpp as follows.  
