@@ -4,7 +4,7 @@
 #include <cmath>
 #include <random>
 #include <ctime>
-#include <omp.h>
+//#include <omp.h>
 #include <boost/math/special_functions/digamma.hpp>
 #include "KdTree.h"
 
@@ -12,7 +12,7 @@ using namespace std;
 
 int main(){
   /* prepare data here */
-  double sample_N = 100000;
+  double sample_N = 400000;
   int K = 100;
   vector<double> test(sample_N);
   vector<double> test2x(sample_N);
